@@ -142,6 +142,8 @@ DemodulatorPanel.prototype.setMode = function(requestedModulation, underlyingMod
         } else {
             this.demodulator.disableBandpass();
         }
+        var ifRate = mode.ifRate || (uMode && uMode.ifRate);
+        this.demodulator.setIfRate(ifRate);
     } else {
         this.demodulator.set_secondary_demod(false);
     }
@@ -173,7 +175,7 @@ DemodulatorPanel.prototype.updatePanels = function() {
     // Packet modes share the same panel
     toggle_panel("openwebrx-panel-packet-message", ['packet', 'ais'].indexOf(modulation) >= 0);
     // these modes come with their own
-    ['js8', 'page', 'pocsag', 'sstv', 'fax', 'ism', 'rds'].forEach(function(m) {
+    ['js8', 'page', 'pocsag', 'sstv', 'fax', 'ism', 'dsc'].forEach(function(m) {
         toggle_panel('openwebrx-panel-' + m + '-message', modulation === m);
     });
 

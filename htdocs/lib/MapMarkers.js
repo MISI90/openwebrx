@@ -502,12 +502,15 @@ AprsMarker.prototype.getInfoHTML = function(name, receiverMarker = null) {
             }
         }
 
-        if (this.weather.rain && (this.weather.rain.day>0)) {
-            weatherString += Utils.makeListItem('Rain',
-                this.weather.rain.hour.toFixed(0) + ' mm/h, ' +
-                this.weather.rain.day.toFixed(0) + ' mm/day'
+        if (this.weather.rain) {
+            var rain = this.weather.rain.hour>0? this.weather.rain.hour.toFixed(0) + ' mm/h' : '';
+            if (this.weather.rain.day>0) {
+                rain += (rain!=''? ', ' : '') + this.weather.rain.day.toFixed(0) + ' mm/day';
+            }
 //                    this.weather.rain.sincemidnight + ' mm since midnight'
-            );
+            if (rain!='') {
+                weatherString += Utils.makeListItem('Rain', rain);
+            }
         }
 
         if (this.weather.snowfall) {
@@ -734,11 +737,11 @@ AircraftMarker.prototype.getInfoHTML = function(name, receiverMarker = null) {
     }
 
     if (this.icao) {
-        detailsString += Utils.makeListItem('ICAO', Utils.linkify(this.icao, modes_url));
+        detailsString += Utils.makeListItem('ICAO', Utils.linkifyIcao(this.icao));
     }
 
     if (this.aircraft) {
-        detailsString += Utils.makeListItem('Aircraft', Utils.linkify(this.aircraft, flight_url));
+        detailsString += Utils.makeListItem('Aircraft', Utils.linkifyFlight(this.aircraft));
     }
 
     if (this.squawk) {
@@ -789,19 +792,15 @@ AircraftMarker.prototype.getInfoHTML = function(name, receiverMarker = null) {
     }
 
     // Linkify title based on what it is (flight, aircraft, ICAO code)
-    var text = this.flight? this.flight : this.aircraft? this.aircraft : name;
-    var url  = null;
     if (this.flight && this.flight.match(/^[A-Z]{3}[0-9]+[A-Z]*$/)) {
-        name = this.flight;
-        url  = flight_url;
+        name = Utils.linkifyFlight(this.flight);
     } else if(this.aircraft) {
-        name = this.aircraft;
-        url  = flight_url;
+        name = Utils.linkifyFlight(this.aircraft);
     } else if(name.match(/^[0-9A-F]{6}$/)) {
-        url  = modes_url;
+        name = Utils.linkifyIcao(name);
     }
 
-    return '<h3>' + Utils.linkify(name, url, text) + distance + '</h3>'
+    return '<h3>' + name + distance + '</h3>'
         + '<div align="center">' + timeString + ' using ' + this.mode + '</div>'
         + commentString + detailsString + messageString;
 };

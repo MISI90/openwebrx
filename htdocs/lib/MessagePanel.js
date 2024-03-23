@@ -88,9 +88,6 @@ WsjtMessagePanel.prototype.render = function() {
 WsjtMessagePanel.prototype.pushMessage = function(msg) {
     var $b = $(this.el).find('tbody');
     var t = new Date(msg['timestamp']);
-    var pad = function (i) {
-        return ('' + i).padStart(2, "0");
-    };
     var linkedmsg = msg['msg'];
     var matches;
 
@@ -111,7 +108,7 @@ WsjtMessagePanel.prototype.pushMessage = function(msg) {
     }
     $b.append($(
         '<tr data-timestamp="' + msg['timestamp'] + '">' +
-        '<td>' + pad(t.getUTCHours()) + pad(t.getUTCMinutes()) + pad(t.getUTCSeconds()) + '</td>' +
+        '<td>' + Utils.HHMMSS(t) + '</td>' +
         '<td class="decimal">' + msg['db'] + '</td>' +
         '<td class="decimal">' + msg['dt'] + '</td>' +
         '<td class="decimal freq">' + msg['freq'] + '</td>' +
@@ -155,9 +152,6 @@ PacketMessagePanel.prototype.render = function() {
 
 PacketMessagePanel.prototype.pushMessage = function(msg) {
     var $b = $(this.el).find('tbody');
-    var pad = function (i) {
-        return ('' + i).padStart(2, "0");
-    };
 
     if (msg.type && msg.type === 'thirdparty' && msg.data) {
         msg = msg.data;
@@ -177,11 +171,7 @@ PacketMessagePanel.prototype.pushMessage = function(msg) {
         }
     }
 
-    var timestamp = '';
-    if (msg.timestamp) {
-        var t = new Date(msg.timestamp);
-        timestamp = pad(t.getUTCHours()) + pad(t.getUTCMinutes()) + pad(t.getUTCSeconds())
-    }
+    var timestamp = msg.timestamp? Utils.HHMMSS(new Date(msg.timestamp)) : '';
 
     var link = '';
     var classes = [];
@@ -342,22 +332,12 @@ HfdlMessagePanel = function(el) {
     MessagePanel.call(this, el);
     this.initClearTimer();
     this.modes = ['HFDL', 'VDL2', 'ADSB', 'ACARS'];
-    this.flight_url = null;
-    this.modes_url = null;
 }
 
 HfdlMessagePanel.prototype = Object.create(MessagePanel.prototype);
 
 HfdlMessagePanel.prototype.supportsMessage = function(message) {
     return this.modes.indexOf(message['mode']) >= 0;
-};
-
-HfdlMessagePanel.prototype.setFlightUrl = function(url) {
-    this.flight_url = url;
-};
-
-HfdlMessagePanel.prototype.setModeSUrl = function(url) {
-    this.modes_url = url;
 };
 
 HfdlMessagePanel.prototype.render = function() {
@@ -375,18 +355,19 @@ HfdlMessagePanel.prototype.render = function() {
 };
 
 HfdlMessagePanel.prototype.pushMessage = function(msg) {
-    var color = msg.color?  msg.color : '#00000000';
-    var data  = msg.type?   msg.type : '';
+    var bcolor = msg.color?  msg.color : '#000';
+    var fcolor = msg.color?  '#000' : '#FFF';
+    var data   = msg.type?   msg.type : '';
 
     // Only linkify ICAO-compliant flight IDs
     var flight =
       !msg.flight? ''
     : !msg.flight.match(/^[A-Z]{3}[0-9]+[A-Z]*$/)? msg.flight
-    : Utils.linkify(msg.flight, this.flight_url);
+    : Utils.linkifyFlight(msg.flight);
 
     var aircraft =
-      msg.aircraft? Utils.linkify(msg.aircraft, this.flight_url)
-    : msg.icao?     Utils.linkify(msg.icao, this.modes_url)
+      msg.aircraft? Utils.linkifyFlight(msg.aircraft)
+    : msg.icao?     Utils.linkifyIcao(msg.icao)
     : '';
 
     var tstamp =
@@ -421,13 +402,13 @@ HfdlMessagePanel.prototype.pushMessage = function(msg) {
             '<td class="aircraft">' + aircraft + '</td>' +
             '<td class="data" style="text-align:left;">' + data + '</td>' +
         '</tr>'
-    ).css('background-color', color).css('color', '#000'));
+    ).css('background-color', bcolor).css('color', fcolor));
 
     // Append messsage if present
     if (msg.message) {
         $b.append($(
             '<tr><td class="message" colspan="4">' + Utils.htmlEscape(msg.message) + '</td></tr>'
-        ))
+        ));
     }
 
     // Jump list to the last received message
@@ -444,8 +425,6 @@ $.fn.hfdlMessagePanel = function() {
 AdsbMessagePanel = function(el) {
     MessagePanel.call(this, el);
     this.clearButton.css('display', 'none');
-    this.flight_url = null;
-    this.modes_url = null;
     this.receiver_pos = null;
 }
 
@@ -457,14 +436,6 @@ AdsbMessagePanel.prototype.supportsMessage = function(message) {
 
 AdsbMessagePanel.prototype.setReceiverPos = function(pos) {
     if (pos.lat && pos.lon) this.receiver_pos = pos;
-};
-
-AdsbMessagePanel.prototype.setFlightUrl = function(url) {
-    this.flight_url = url;
-};
-
-AdsbMessagePanel.prototype.setModeSUrl = function(url) {
-    this.modes_url = url;
 };
 
 AdsbMessagePanel.prototype.render = function() {
@@ -497,11 +468,11 @@ AdsbMessagePanel.prototype.pushMessage = function(msg) {
 
         // Flight identificators
         var flight =
-          entry.flight? Utils.linkify(entry.flight, this.flight_url)
+          entry.flight? Utils.linkifyFlight(entry.flight)
         : '';
         var aircraft =
-          entry.aircraft? Utils.linkify(entry.aircraft, this.flight_url)
-        : entry.icao?     Utils.linkify(entry.icao, this.modes_url)
+          entry.aircraft? Utils.linkifyFlight(entry.aircraft)
+        : entry.icao?     Utils.linkifyIcao(entry.icao)
         : '';
 
         // Altitude and climb / descent
@@ -561,6 +532,97 @@ $.fn.adsbMessagePanel = function() {
     return this.data('panel');
 };
 
+DscMessagePanel = function(el) {
+    MessagePanel.call(this, el);
+    this.initClearTimer();
+}
+
+DscMessagePanel.prototype = Object.create(MessagePanel.prototype);
+
+DscMessagePanel.prototype.supportsMessage = function(message) {
+    return message['mode'] === 'DSC';
+};
+
+DscMessagePanel.prototype.render = function() {
+    $(this.el).append($(
+        '<table>' +
+            '<thead><tr>' +
+                '<th class="timestamp">UTC</th>' +
+                '<th class="src">From</th>' +
+                '<th class="dst">To</th>' +
+                '<th class="data">Data</th>' +
+            '</tr></thead>' +
+            '<tbody></tbody>' +
+        '</table>'
+    ));
+};
+
+DscMessagePanel.prototype.pushMessage = function(msg) {
+    var bcolor = msg.color? msg.color : '#000';
+    var fcolor = msg.color? '#000' : '#FFF';
+    var src    = msg.src? Utils.linkifyVessel(msg.src) : '';
+    var dst    = msg.dst? Utils.linkifyVessel(msg.dst) : '';
+    var data   = (
+      (msg.category? ' ' + msg.category : '')
+    + (msg.format?   ' ' + msg.format : '')
+    + (msg.eos?      ' ' + msg.eos : '')
+    + (!msg.ecc && !msg.data? ' ?' : '')
+    ).trim().toUpperCase();
+
+    // Format timestamp
+    var timestamp =
+      msg.time?      '<b>' + msg.time + '</b>'
+    : msg.timestamp? Utils.HHMMSS(new Date(msg.timestamp * 1000))
+    : '';
+
+    // Format debugging data
+    var symbols = '';
+    if (msg.data) {
+        symbols = msg.data.replace(
+            /(.*)\|(.*)/, ' $1<span style="opacity:0.5;"> | $2 &hellip;</span>'
+        );
+    }
+
+    // Combine remaining attributes into a message
+    var message = (
+      (msg.distress? ' ' + msg.distress : '')
+    + (msg.id?     ' SHIP ' + Utils.linkifyVessel(msg.id) : '')
+    + (msg.loc?    ' AT ' + msg.loc : '')
+    + (msg.num?    ' DIAL ' + msg.num : '')
+    + (msg.rxfreq? ' RX ' + Utils.printFreq(msg.rxfreq) : '')
+    + (msg.txfreq? ' TX ' + Utils.printFreq(msg.txfreq) : '')
+    + symbols
+    ).trim();
+
+    // Append report
+    var $b = $(this.el).find('tbody');
+    $b.append($(
+        '<tr>' +
+            '<td class="timestamp">' + timestamp + '</td>' +
+            '<td class="src">' + src + '</td>' +
+            '<td class="dst">' + dst + '</td>' +
+            '<td class="data" style="text-align:left;">' + data + '</td>' +
+        '</tr>'
+    ).css('background-color', bcolor).css('color', fcolor));
+
+    // Append messsage if present
+    if (message) {
+        $b.append($(
+            '<tr><td class="message" colspan="4">' + message + '</td></tr>'
+        ));
+    }
+
+    // Jump list to the last received message
+    this.scrollToBottom();
+};
+
+$.fn.dscMessagePanel = function() {
+    if (!this.data('panel')) {
+        this.data('panel', new DscMessagePanel(this));
+    }
+    return this.data('panel');
+};
+
 IsmMessagePanel = function(el) {
     MessagePanel.call(this, el);
     this.initClearTimer();
@@ -598,10 +660,10 @@ IsmMessagePanel.prototype.formatAttr = function(msg, key) {
 
 IsmMessagePanel.prototype.pushMessage = function(msg) {
     // Get basic information, assume white color if missing
-    var address = msg.hasOwnProperty('id')? msg.id : "???";
-    var device  = msg.hasOwnProperty('model')? msg.model : "";
-    var tstamp  = msg.hasOwnProperty('time')? msg.time : "";
-    var color   = msg.hasOwnProperty('color')? msg.color : "#FFF";
+    var address = msg.hasOwnProperty('id')? msg.id : '???';
+    var device  = msg.hasOwnProperty('model')? msg.model : '';
+    var tstamp  = msg.hasOwnProperty('time')? msg.time : '';
+    var color   = msg.hasOwnProperty('color')? msg.color : '#FFF';
 
     // Append message header (address, time, etc)
     var $b = $(this.el).find('tbody');
@@ -637,67 +699,6 @@ IsmMessagePanel.prototype.pushMessage = function(msg) {
 $.fn.ismMessagePanel = function() {
     if (!this.data('panel')) {
         this.data('panel', new IsmMessagePanel(this));
-    }
-    return this.data('panel');
-};
-
-RdsMessagePanel = function(el) {
-    this.el = el;
-    this.render();
-}
-
-RdsMessagePanel.prototype = Object.create(MessagePanel.prototype);
-
-RdsMessagePanel.prototype.supportsMessage = function(message) {
-    return message['mode'] === 'RDS';
-};
-
-RdsMessagePanel.prototype.render = function() {
-    $(this.el).append($(
-        '<div>' +
-            '<span id="rds-name" class="name" />' +
-            '<span id="rds-pi" class="pi" />' +
-        '</div>' +
-        '<div id="rds-ps" class="ps" />' +
-        '<div id="rds-text" class="text" />' +
-        '<div>' +
-            '<span id="rds-pty" class="pty" />' +
-            '<span id="rds-ct" class="ct" />' +
-        '</div>'
-    ));
-};
-
-RdsMessagePanel.prototype.pushMessage = function(msg) {
-    var pi   = msg.hasOwnProperty('pi')? 'PI:' + msg.pi : '';
-    var ps   = msg.hasOwnProperty('ps')? msg.ps : '---';
-    var ct   = msg.hasOwnProperty('clock_time')? msg.clock_time : '';
-    var pty  = msg.hasOwnProperty('prog_type')? msg.prog_type : '';
-    var name = msg.hasOwnProperty('callsign')? msg.callsign : '';
-    var freq = msg.hasOwnProperty('frequency')? msg.frequency : 0;
-    var text = msg.hasOwnProperty('radiotext')? msg.radiotext : '';
-
-    // Combine callsign with frequency
-    $('#rds-name').html(
-        name + (name && freq? ' ':'') +
-        (freq? '' + (freq/1000000).toFixed(1) : '')
-    );
-
-    // CT = "2023-12-08T16:40:00-05:00" => "2023-12-08 16:40:00"
-    if (ct) {
-        var matches = ct.match(/^(.*)T(.*)[Z+\-]/);
-        if (matches) ct = matches[1] + '&nbsp;' + matches[2];
-    }
-
-    $('#rds-pi').html(pi);
-    $('#rds-ps').html(Utils.htmlEscape(ps));
-    $('#rds-text').html(Utils.htmlEscape(text));
-    $('#rds-pty').html(pty);
-    $('#rds-ct').html(ct);
-};
-
-$.fn.rdsMessagePanel = function() {
-    if (!this.data('panel')) {
-        this.data('panel', new RdsMessagePanel(this));
     }
     return this.data('panel');
 };

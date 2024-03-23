@@ -8,7 +8,9 @@ from pycsdr.types import Format
 from owrx.aprs.direwolf import DirewolfModule
 from owrx.sstv import SstvParser
 from owrx.fax import FaxParser
+from owrx.dsc import DscParser
 from owrx.config import Config
+
 
 class AudioChopperDemodulator(ServiceDemodulator, DialFrequencyReceiver):
     def __init__(self, mode: str, parser: AudioChopperParser):
@@ -122,15 +124,16 @@ class RttyDemodulator(SecondaryDemodulator, SecondarySelectorChain):
         self.replace(3, TimingRecovery(Format.FLOAT, secondary_samples_per_bit, loop_gain, 10))
 
 
-class CwDemodulator(SecondaryDemodulator, SecondarySelectorChain):
+class CwDemodulator(SecondaryDemodulator, SecondarySelectorChain, DialFrequencyReceiver):
     def __init__(self, bandWidth: float = 100):
         pm = Config.get()
         self.sampleRate = 12000
         self.bandWidth = bandWidth
         self.showCw = pm["cw_showcw"]
+        self.decoder = CwDecoder(self.sampleRate, self.showCw)
         workers = [
             Agc(Format.COMPLEX_FLOAT),
-            CwDecoder(self.sampleRate, self.showCw),
+            self.decoder
         ]
         super().__init__(workers)
 
@@ -141,7 +144,11 @@ class CwDemodulator(SecondaryDemodulator, SecondarySelectorChain):
         if sampleRate == self.sampleRate:
             return
         self.sampleRate = sampleRate
-        self.replace(1, CwDecoder(sampleRate, self.showCw))
+        self.decoder = CwDecoder(sampleRate, self.showCw)
+        self.replace(1, self.decoder)
+
+    def setDialFrequency(self, frequency: int) -> None:
+        self.decoder.reset()
 
 
 class MFRttyDemodulator(SecondaryDemodulator, SecondarySelectorChain):
@@ -223,7 +230,7 @@ class SitorBDemodulator(SecondaryDemodulator, SecondarySelectorChain):
         self.bandWidth = bandWidth
         self.invert = invert
         # this is an assumption, we will adjust in setSampleRate
-        self.sampleRate = 12000
+        self.sampleRate = self.bandWidth * 10 #12000
         secondary_samples_per_bit = int(round(self.sampleRate / self.baudRate))
         cutoff = self.baudRate / self.sampleRate
         loop_gain = self.sampleRate / self.getBandwidth() / 5
@@ -232,7 +239,7 @@ class SitorBDemodulator(SecondaryDemodulator, SecondarySelectorChain):
             FmDemod(),
             Lowpass(Format.FLOAT, cutoff),
             TimingRecovery(Format.FLOAT, secondary_samples_per_bit, loop_gain, 10),
-            SitorBDecoder(jitter=1, allowErrors=16, invert=invert),
+            SitorBDecoder(invert=invert),
             Ccir476Decoder(),
         ]
         super().__init__(workers)
@@ -251,13 +258,14 @@ class SitorBDemodulator(SecondaryDemodulator, SecondarySelectorChain):
         self.replace(3, TimingRecovery(Format.FLOAT, secondary_samples_per_bit, loop_gain, 10))
 
 
-class DscDemodulator(SecondaryDemodulator, SecondarySelectorChain):
-    def __init__(self, baudRate=100, bandWidth=170, invert=False):
-        self.baudRate = baudRate
-        self.bandWidth = bandWidth
-        self.invert = invert
+class DscDemodulator(SecondaryDemodulator, SecondarySelectorChain, DialFrequencyReceiver):
+    def __init__(self, baudRate=100, bandWidth=170, invert=False, service=False):
+        self.baudRate   = baudRate
+        self.bandWidth  = bandWidth
+        self.invert     = invert
+        self.parser     = DscParser(service=service)
         # this is an assumption, we will adjust in setSampleRate
-        self.sampleRate = 12000
+        self.sampleRate = self.bandWidth * 10 #12000
         secondary_samples_per_bit = int(round(self.sampleRate / self.baudRate))
         cutoff = self.baudRate / self.sampleRate
         loop_gain = self.sampleRate / self.getBandwidth() / 5
@@ -268,6 +276,7 @@ class DscDemodulator(SecondaryDemodulator, SecondarySelectorChain):
             TimingRecovery(Format.FLOAT, secondary_samples_per_bit, loop_gain, 10),
             Ccir493Decoder(invert=invert),
             DscDecoder(),
+            self.parser
         ]
         super().__init__(workers)
 
@@ -283,3 +292,11 @@ class DscDemodulator(SecondaryDemodulator, SecondarySelectorChain):
         loop_gain = self.sampleRate / self.getBandwidth() / 5
         self.replace(2, Lowpass(Format.FLOAT, cutoff))
         self.replace(3, TimingRecovery(Format.FLOAT, secondary_samples_per_bit, loop_gain, 10))
+
+    # DialFrequencyReceiver
+    def setDialFrequency(self, frequency: int) -> None:
+        self.parser.setDialFrequency(frequency)
+
+    # ServiceDemodulator
+    def getFixedAudioRate(self):
+        return self.sampleRate

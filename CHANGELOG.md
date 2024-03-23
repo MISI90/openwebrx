@@ -1,3 +1,65 @@
+**1.2.52**
+- Added MID codes for coastal stations, by continent.
+- Added secondary selector offset to the dial frequency.
+- Fixed dial frequency updates when secondary FFT clicked.
+- Fixed repeated secondary demodulator creation.
+- Improved CCIR493 and SITORB decoders.
+- Printing valid DSC messages as INFO, errors as DEBUG.
+- Not killing SatDump, will quit on its own.
+
+**1.2.51**
+- Background DSC decoding now works.
+- Added DSC display of timestamps and frequencies.
+- Added preliminary SatDump support (experts only!)
+- Removed 'apt install' lines from feature instructions.
+- Slightly optimized ExecModule operation.
+- Improved DSC reception quality.
+- Allowed dash in modulation names.
+
+**1.2.50**
+- Added DSC decoder and bookmarks.
+- Rolled wide-band ISM back to 250kHz with bandpass.
+- Limited scanner to LSB, USB, CW, AM, SAM, and NFM modes.
+- Clarified installation instructions for some features.
+- Now clearing FAILED device status when disabling device.
+- Now resetting CW decoder state on frequency changes.
+- Updated feature descriptions in feature.py.
+- Moved all linkification to Utils.js.
+- Fixed APRS rain reports.
+
+**1.2.49**
+- Added optimizations to DAB processing made by Jakob.
+- Removed bandpass filters from ADS-B and ISM modes.
+- Increased ISM bandwidth to 1.2Msps.
+- Coloring ground-to-air messages black.
+
+**1.2.48**
+- Added chat nicknames to the clients display.
+- Fixed DAB support by adding missing Dablin class.
+- Fixed secondary waterfall height in SSTV and FAX modes.
+- Allowed full range of SDRPlay samplerates.
+- Allowed full range of HackRF samplerates.
+- Extended default samplerate range to 30Msps.
+- Improved RDS information display.
+- Switched RDS to ExecModule (YOU HAVE TO UPDATE REDSEA).
+- Switched RDS to the original, optimized parser.
+
+**1.2.47**
+- Merged changes from Jakob Ketterl's original development branch.
+- Switched to updated CSDR, PyCSDR, OWRX Connector packages.
+- Fixed WSJT out-of-band reports showing as "null" on the map.
+- Fixed top bar icons disappearing on mobile devices.
+- Fixed compatibility with Python 3.12+.
+- Fixed orientation of some APRS symbols.
+- Removed separate RDS decoder (now part of WFM).
+- [jketterl] Added support for DAB radio via Dablin (untested in OWRX+).
+- [jketterl] Added always-on RDS decoder in WFM mode.
+- [jketterl] Added checks for valid source bandwidths.
+- [jketterl] Added Afedri SDR source.
+- [jketterl] Added Linux desktop icon for OpenWebRX.
+- [jketterl] Fixed ThreadModule starting thread twice.
+- [jketterl] Removed depdendency on SoapySDRUtils.
+
 **1.2.46**
 - Added list of active services to the Settings page.
 - Added new toolbar icons, based on Google design.

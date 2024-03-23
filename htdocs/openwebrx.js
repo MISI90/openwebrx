@@ -1076,15 +1076,13 @@ function on_ws_recv(evt) {
                         if ('flight_url' in config) {
                             var hfdl_panel = $('#openwebrx-panel-hfdl-message').hfdlMessagePanel();
                             var adsb_panel = $('#openwebrx-panel-adsb-message').adsbMessagePanel();
-                            hfdl_panel.setFlightUrl(config['flight_url']);
-                            adsb_panel.setFlightUrl(config['flight_url']);
+                            Utils.setFlightUrl(config['flight_url']);
                         }
 
                         if ('modes_url' in config) {
                             var hfdl_panel = $('#openwebrx-panel-hfdl-message').hfdlMessagePanel();
                             var adsb_panel = $('#openwebrx-panel-adsb-message').adsbMessagePanel();
-                            hfdl_panel.setModeSUrl(config['modes_url']);
-                            adsb_panel.setModeSUrl(config['modes_url']);
+                            Utils.setIcaoUrl(config['modes_url']);
                         }
 
                         if ('callsign_url' in config) {
@@ -1169,7 +1167,7 @@ function on_ws_recv(evt) {
                         break;
                     case 'secondary_demod':
                         var value = json['value'];
-                        var panels = ['wsjt', 'packet', 'pocsag', 'page', 'sstv', 'fax', 'ism', 'rds', 'hfdl', 'adsb'].map(function(id) {
+                        var panels = ['wsjt', 'packet', 'pocsag', 'page', 'sstv', 'fax', 'ism', 'hfdl', 'adsb', 'dsc'].map(function(id) {
                             return $('#openwebrx-panel-' + id + '-message')[id + 'MessagePanel']();
                         });
                         panels.push($('#openwebrx-panel-js8-message').js8());
@@ -1846,7 +1844,7 @@ function secondary_demod_init() {
         .mousedown(secondary_demod_canvas_container_mousedown)
         .mouseenter(secondary_demod_canvas_container_mousein)
         .mouseleave(secondary_demod_canvas_container_mouseleave);
-    ['wsjt', 'packet', 'pocsag', 'page', 'sstv', 'fax', 'ism', 'rds', 'hfdl', 'adsb'].forEach(function(id){
+    ['wsjt', 'packet', 'pocsag', 'page', 'sstv', 'fax', 'ism', 'hfdl', 'adsb', 'dsc'].forEach(function(id){
         $('#openwebrx-panel-' + id + '-message')[id + 'MessagePanel']();
     })
     $('#openwebrx-panel-js8-message').js8();

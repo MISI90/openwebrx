@@ -1360,6 +1360,45 @@ img.openwebrx-mirror-img
     text-align: right;
 }
 
+#openwebrx-panel-dsc-message {
+    height: 310px;
+}
+
+#openwebrx-panel-dsc-message a {
+    color: inherit;
+}
+
+#openwebrx-panel-dsc-message tbody {
+    height: 280px;
+}
+
+#openwebrx-panel-dsc-message .timestamp {
+    width: 70px;
+    text-align: center;
+}
+
+#openwebrx-panel-dsc-message .src {
+    width: 90px;
+    text-align: center;
+}
+
+#openwebrx-panel-dsc-message .dst {
+    width: 90px;
+    text-align: center;
+}
+
+#openwebrx-panel-dsc-message .data {
+    width: 316px;
+    text-align: center;
+}
+
+#openwebrx-panel-dsc-message .message {
+    width: 566px;
+    max-width: 566px;
+    column-span: all;
+    word-wrap: break-word;
+}
+
 #openwebrx-panel-ism-message {
     height: 310px;
 }
@@ -1389,61 +1428,6 @@ img.openwebrx-mirror-img
     width: 283px;
     padding-left: 10px;
     padding-right: 10px;
-}
-
-#openwebrx-panel-rds-message {
-    height: 350px;
-}
-
-#openwebrx-panel-rds-message .name {
-    display: inline-block;
-    text-align: left;
-    font-size: 16px;
-    width: 50%;
-    padding-bottom: 20px;
-    white-space: nowrap;
-}
-
-#openwebrx-panel-rds-message .pi {
-    display: inline-block;
-    text-align: right;
-    font-size: 16px;
-    width: 50%;
-    padding-bottom: 20px;
-    white-space: nowrap;
-}
-
-#openwebrx-panel-rds-message .ps {
-    text-align: center;
-    font-size: 35px;
-    font-weight: bold;
-    width: 100%;
-}
-
-#openwebrx-panel-rds-message .text {
-    text-align: center;
-    font-size: 16px;
-    font-weight: bold;
-    width: 100%;
-    padding-top: 20px;
-}
-
-#openwebrx-panel-rds-message .pty {
-    display: inline-block;
-    text-align: left;
-    font-size: 16px;
-    width: 50%;
-    padding-top: 20px;
-    white-space: nowrap;
-}
-
-#openwebrx-panel-rds-message .ct {
-    display: inline-block;
-    text-align: right;
-    font-size: 16px;
-    width: 50%;
-    padding-top: 20px;
-    white-space: nowrap;
 }
 
 #openwebrx-panel-sstv-message {
@@ -1588,7 +1572,7 @@ img.openwebrx-mirror-img
 #openwebrx-panel-digimodes[data-mode="sstv"]    #openwebrx-digimode-content-container,
 #openwebrx-panel-digimodes[data-mode="fax"]     #openwebrx-digimode-content-container,
 #openwebrx-panel-digimodes[data-mode="ism"]     #openwebrx-digimode-content-container,
-#openwebrx-panel-digimodes[data-mode="rds"]     #openwebrx-digimode-content-container,
+#openwebrx-panel-digimodes[data-mode="dsc"]     #openwebrx-digimode-content-container,
 #openwebrx-panel-digimodes[data-mode="ft8"]     #openwebrx-digimode-select-channel,
 #openwebrx-panel-digimodes[data-mode="wspr"]    #openwebrx-digimode-select-channel,
 #openwebrx-panel-digimodes[data-mode="jt65"]    #openwebrx-digimode-select-channel,
@@ -1610,7 +1594,6 @@ img.openwebrx-mirror-img
 #openwebrx-panel-digimodes[data-mode="sstv"]    #openwebrx-digimode-select-channel,
 #openwebrx-panel-digimodes[data-mode="fax"]     #openwebrx-digimode-select-channel,
 #openwebrx-panel-digimodes[data-mode="ism"]     #openwebrx-digimode-select-channel,
-#openwebrx-panel-digimodes[data-mode="rds"]     #openwebrx-digimode-select-channel,
 #openwebrx-panel-digimodes[data-mode="selcall"] #openwebrx-digimode-select-channel,
 #openwebrx-panel-digimodes[data-mode="zvei"]    #openwebrx-digimode-select-channel
 {
@@ -1638,7 +1621,7 @@ img.openwebrx-mirror-img
 #openwebrx-panel-digimodes[data-mode="sstv"]    #openwebrx-digimode-canvas-container,
 #openwebrx-panel-digimodes[data-mode="fax"]     #openwebrx-digimode-canvas-container,
 #openwebrx-panel-digimodes[data-mode="ism"]     #openwebrx-digimode-canvas-container,
-#openwebrx-panel-digimodes[data-mode="rds"]     #openwebrx-digimode-canvas-container
+#openwebrx-panel-digimodes[data-mode="dsc"]     #openwebrx-digimode-canvas-container
 {
     height: 200px;
     margin: -10px;
@@ -1694,8 +1677,9 @@ img.openwebrx-mirror-img
 }
 
 #openwebrx-panel-metadata-wfm {
-	width: 300px;
+	width: 350px;
 	max-height: 300px;
+	padding: 10px 10px 10px 10px;
 }
 
 .rds-container {
@@ -1704,20 +1688,47 @@ img.openwebrx-mirror-img
 	overflow: hidden auto;
 }
 
-.rds-container > *, .rds-radiotext-plus > * {
-	margin: 2px 0;
+.rds-container .rds-stationname {
+	font-weight: bold;
+	font-size: 18pt;
 }
 
-.rds-container .rds-stationname {
-	font-family: roboto-mono;
-	font-size: 18pt;
-	padding: 10px 0;
+.rds-container .rds-top-line,
+.rds-container .rds-bottom-line,
+.rds-container .rds-stationname,
+.rds-container .rds-radiotext,
+.rds-container .rds-radiotext-plus {
+	min-height: 1lh;
+}
+
+.rds-container .rds-top-line {
+	padding: 0 0 5px 0;
+}
+
+.rds-container .rds-bottom-line {
+	padding: 5px 0 0 0;
 }
 
 .rds-container .rds-stationname,
-.rds-container .rds-identifier,
+.rds-container .rds-radiotext,
+.rds-container .rds-radiotext-plus {
+	padding: 5px 0 5px 0;
+}
+
+.rds-container .rds-callsign {
+	float: left;
+}
+
+.rds-container .rds-identifier {
+	float: right;
+}
+
 .rds-container .rds-prog_type {
-	min-height: 1lh;
+	float: left;
+}
+
+.rds-container .rds-clock {
+	float: right;
 }
 
 .rds-container .rds-radiotext-plus .rds-rtplus-item:not(:empty):before {
@@ -1742,7 +1753,7 @@ img.openwebrx-mirror-img
 }
 
 #openwebrx-panel-metadata-dab {
-	width: 300px;
+	width: 350px;
 }
 
 #openwebrx-panel-metadata-dab .dab-container {

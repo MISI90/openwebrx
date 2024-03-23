@@ -13,7 +13,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class TextParser(LineBasedModule):
     def __init__(self, filePrefix: str = None, service: bool = False):
         self.service   = service
@@ -63,8 +62,8 @@ class TextParser(LineBasedModule):
             # Write new line into the file
             try:
                 self.file.write(data)
-            except Exception:
-                pass
+            except Exception as exptn:
+                logger.debug("Exception writing file: %s" % str(exptn))
             # No more than maxLines per file
             self.cntLines = self.cntLines + 1
             if self.cntLines >= self.maxLines:
@@ -81,8 +80,9 @@ class TextParser(LineBasedModule):
 
     # Compose name of this decoder, made of client/service and frequency
     def myName(self):
-        return "%s%s" % (
+        return "%s%s%s" % (
             "Service" if self.service else "Client",
+            " " + self.filePfx if self.filePfx else "",
             " at %dkHz" % (self.frequency // 1000) if self.frequency>0 else ""
         )
 
@@ -106,18 +106,58 @@ class TextParser(LineBasedModule):
         try:
             #logger.debug("%s: %s" % (self.myName(), str(line)))
             # If running as a service with a log file...
-            if self.service and self.filePfx is not None:
-                # Write message into open log file, including end-of-line
-                self.writeFile(line)
-                self.writeFile(b"\n")
             # Let parse() function do its thing
             out = self.parse(line)
+            # If running as a service and writing to a log file...
+            if self.service and self.filePfx is not None:
+                if out and len(out) > 0:
+                    # If parser returned output, write it into log file
+                    self.writeFile(str(out).encode("utf-8"))
+                    self.writeFile(b"\n")
+                elif out is None and len(line) > 0:
+                    # Write input into log file, including end-of-line
+                    self.writeFile(line)
+                    self.writeFile(b"\n")
 
         except Exception as exptn:
             logger.debug("%s: Exception parsing: %s" % (self.myName(), str(exptn)))
 
         # Return parsed result, ignore result in service mode
-        return out if not self.service else None
+        return out if out and not self.service else None
+
+
+class RdsParser(TextParser):
+    def __init__(self, service: bool = False):
+        # Data will be accumulated here
+        self.rds = { "mode": "WFM" }
+        # Construct parent object
+        super().__init__(filePrefix="WFM", service=service)
+
+    def parse(self, msg: bytes):
+        # Do not parse in service mode
+        if self.service:
+            return None
+        # Expect JSON data in text form
+        data = json.loads(msg)
+        # Delete constantly changing group ID
+        data.pop("group", None)
+        # Clear data when PI changes
+        if data.get("pi") != self.rds.get("pi"):
+            if "frequency" in self.rds:
+                self.rds = { "mode": "WFM", "frequency": self.rds["frequency"] }
+            else:
+                self.rds = { "mode": "WFM" }
+        # Only update if there is new data
+        if data.items() <= self.rds.items():
+            return None
+        else:
+            self.rds.update(data)
+            return self.rds
+
+    def setDialFrequency(self, frequency: int) -> None:
+        super().setDialFrequency(frequency)
+        # Clear RDS data when frequency changed
+        self.rds = { "mode": "WFM", "frequency": frequency }
 
 
 class IsmParser(TextParser):

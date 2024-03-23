@@ -1,3 +1,83 @@
+openwebrx (1.2.52) bullseye jammy; urgency=low
+
+  * Added MID codes for coastal stations, by continent.
+  * Added secondary selector offset to the dial frequency.
+  * Fixed dial frequency updates when secondary FFT clicked.
+  * Fixed repeated secondary demodulator creation.
+  * Improved CCIR493 and SITORB decoders.
+  * Printing valid DSC messages as INFO, errors as DEBUG.
+  * Not killing SatDump, will quit on its own.
+
+ -- Marat Fayzullin <luarvique@gmail.com>  Mon, 18 Mar 2024 16:12:00 +0000
+
+openwebrx (1.2.51) bullseye jammy; urgency=low
+
+  * Background DSC decoding now works.
+  * Added DSC display of timestamps and frequencies.
+  * Added preliminary SatDump support (experts only!)
+  * Removed 'apt install' lines from feature instructions.
+  * Slightly optimized ExecModule operation.
+  * Improved DSC reception quality.
+  * Allowed dash in modulation names.
+
+ -- Marat Fayzullin <luarvique@gmail.com>  Mon, 11 Mar 2024 16:12:00 +0000
+
+openwebrx (1.2.50) bullseye jammy; urgency=low
+
+  * Added DSC decoder and bookmarks.
+  * Rolled wide-band ISM back to 250kHz with bandpass.
+  * Limited scanner to LSB, USB, CW, AM, SAM, and NFM modes.
+  * Clarified installation instructions for some features.
+  * Now clearing FAILED device status when disabling device.
+  * Now resetting CW decoder state on frequency changes.
+  * Updated feature descriptions in feature.py.
+  * Moved all linkification to Utils.js.
+  * Fixed APRS rain reports.
+
+ -- Marat Fayzullin <luarvique@gmail.com>  Mon, 4 Mar 2024 16:12:00 +0000
+
+openwebrx (1.2.49) bullseye jammy; urgency=low
+
+  * Added optimizations to DAB processing made by Jakob.
+  * Removed bandpass filters from ADS-B and ISM modes.
+  * Increased ISM bandwidth to 1.2Msps.
+  * Coloring ground-to-air messages black.
+
+ -- Marat Fayzullin <luarvique@gmail.com>  Fri, 16 Feb 2024 16:12:00 +0000
+
+openwebrx (1.2.48) bullseye jammy; urgency=low
+
+  * Added chat nicknames to the clients display.
+  * Fixed DAB support by adding missing Dablin class.
+  * Fixed secondary waterfall height in SSTV and FAX modes.
+  * Allowed full range of SDRPlay samplerates.
+  * Allowed full range of HackRF samplerates.
+  * Extended default samplerate range to 30Msps.
+  * Improved RDS information display.
+  * Switched RDS to ExecModule (YOU HAVE TO UPDATE REDSEA).
+  * Switched RDS to the original, optimized parser.
+
+ -- Marat Fayzullin <luarvique@gmail.com>  Mon, 12 Feb 2024 16:12:00 +0000
+
+openwebrx (1.2.47) bullseye jammy; urgency=low
+
+  * Merged changes from Jakob Ketterl's original development branch.
+  * Switched to updated CSDR, PyCSDR, OWRX Connector packages.
+  * Fixed WSJT out-of-band reports showing as "null" on the map.
+  * Fixed top bar icons disappearing on mobile devices.
+  * Fixed compatibility with Python 3.12+.
+  * Fixed orientation of some APRS symbols.
+  * Removed separate RDS decoder (now part of WFM).
+  * [jketterl] Added support for DAB radio via Dablin (untested in OWRX+).
+  * [jketterl] Added always-on RDS decoder in WFM mode.
+  * [jketterl] Added checks for valid source bandwidths.
+  * [jketterl] Added Afedri SDR source.
+  * [jketterl] Added Linux desktop icon for OpenWebRX.
+  * [jketterl] Fixed ThreadModule starting thread twice.
+  * [jketterl] Removed depdendency on SoapySDRUtils.
+
+ -- Marat Fayzullin <luarvique@gmail.com>  Mon, 5 Feb 2024 16:12:00 +0000
+
 openwebrx (1.2.46) bullseye jammy; urgency=low
 
   * Added list of active services to the Settings page.

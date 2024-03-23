@@ -256,6 +256,8 @@ class ClientDemodulatorChain(Chain):
         if isinstance(self.demodulator, DialFrequencyReceiver):
             self.demodulator.setDialFrequency(dialFrequency)
         if isinstance(self.secondaryDemodulator, DialFrequencyReceiver):
+            if self.secondaryFrequencyOffset:
+                dialFrequency += self.secondaryFrequencyOffset
             self.secondaryDemodulator.setDialFrequency(dialFrequency)
 
     def setAudioCompression(self, compression: str) -> None:
@@ -355,10 +357,9 @@ class ClientDemodulatorChain(Chain):
         if self.secondaryFrequencyOffset == freq:
             return
         self.secondaryFrequencyOffset = freq
-
-        if self.secondarySelector is None:
-            return
-        self.secondarySelector.setFrequencyOffset(self.secondaryFrequencyOffset)
+        if self.secondarySelector:
+            self.secondarySelector.setFrequencyOffset(self.secondaryFrequencyOffset)
+        self._updateDialFrequency()
 
     def setSecondaryFftCompression(self, compression: str) -> bool:
         if compression == self.secondaryFftCompression:
@@ -417,11 +418,11 @@ class ClientDemodulatorChain(Chain):
 
 class ModulationValidator(OrValidator):
     """
-    This validator only allows alphanumeric characters and numbers, but no spaces or special characters
+    This validator only allows alphanumeric characters and dashes, but no spaces or special characters
     """
 
     def __init__(self):
-        super().__init__(BoolValidator(), RegexValidator(re.compile("^[a-z0-9]+$")))
+        super().__init__(BoolValidator(), RegexValidator(re.compile("^[a-z0-9\\-]+$")))
 
 
 class DspManager(SdrSourceEventClient, ClientDemodulatorSecondaryDspEventClient):
@@ -639,8 +640,10 @@ class DspManager(SdrSourceEventClient, ClientDemodulatorSecondaryDspEventClient)
                 self.wireOutput(self.audioOutput, buffer)
 
             # recreate secondary demodulator, if present
-            if "secondary_mod" in self.props:
-                self.setSecondaryDemodulator(self.props["secondary_mod"])
+            mod2 = self.props["secondary_mod"] if "secondary_mod" in self.props else ""
+            desc = Modes.findByModulation(mod2)
+            if hasattr(desc, "underlying") and mod in desc.underlying:
+                self.setSecondaryDemodulator(mod2)
 
         except DemodulatorError as de:
             self.handler.write_demodulator_error(str(de))
@@ -694,10 +697,10 @@ class DspManager(SdrSourceEventClient, ClientDemodulatorSecondaryDspEventClient)
             return RttyDemodulator(50, 85, invert=True)
         elif mod == "sitorb":
             from csdr.chain.digimodes import SitorBDemodulator
-            return SitorBDemodulator()
+            return SitorBDemodulator(100, 170 + 40)
         elif mod == "dsc":
             from csdr.chain.digimodes import DscDemodulator
-            return DscDemodulator()
+            return DscDemodulator(100, 170 + 40)
         elif mod == "cwdecoder":
             from csdr.chain.digimodes import CwDemodulator
             return CwDemodulator(75.0)
@@ -728,6 +731,18 @@ class DspManager(SdrSourceEventClient, ClientDemodulatorSecondaryDspEventClient)
         elif mod == "adsb":
             from csdr.chain.toolbox import AdsbDemodulator
             return AdsbDemodulator()
+        elif mod == "noaa-apt-15":
+            from csdr.chain.toolbox import NoaaAptDemodulator
+            return NoaaAptDemodulator(satellite=15)
+        elif mod == "noaa-apt-18":
+            from csdr.chain.toolbox import NoaaAptDemodulator
+            return NoaaAptDemodulator(satellite=18)
+        elif mod == "noaa-apt-19":
+            from csdr.chain.toolbox import NoaaAptDemodulator
+            return NoaaAptDemodulator(satellite=19)
+        elif mod == "meteor-lrpt":
+            from csdr.chain.toolbox import MeteorLrptDemodulator
+            return MeteorLrptDemodulator()
 
     def setSecondaryDemodulator(self, mod):
         demodulator = self._getSecondaryDemodulator(mod)

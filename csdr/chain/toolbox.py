@@ -1,11 +1,11 @@
-from csdr.chain.demodulator import ServiceDemodulator, DialFrequencyReceiver, FixedIfSampleRateChain
-from csdr.module.toolbox import Rtl433Module, MultimonModule, DumpHfdlModule, DumpVdl2Module, Dump1090Module, AcarsDecModule, RedseaModule
+from csdr.chain.demodulator import ServiceDemodulator, DialFrequencyReceiver
+from csdr.module.toolbox import Rtl433Module, MultimonModule, DumpHfdlModule, DumpVdl2Module, Dump1090Module, AcarsDecModule, RedseaModule, SatDumpModule
 from pycsdr.modules import FmDemod, AudioResampler, Convert, Agc, Squelch
 from pycsdr.types import Format
-from owrx.toolbox import TextParser, PageParser, SelCallParser, IsmParser
+from owrx.toolbox import TextParser, PageParser, SelCallParser, IsmParser, RdsParser
 from owrx.aircraft import HfdlParser, Vdl2Parser, AdsbParser, AcarsParser
-from owrx.config import Config
 
+from datetime import datetime
 import os
 
 class IsmDemodulator(ServiceDemodulator, DialFrequencyReceiver):
@@ -189,3 +189,72 @@ class AcarsDemodulator(ServiceDemodulator, DialFrequencyReceiver):
 
     def setDialFrequency(self, frequency: int) -> None:
         self.parser.setDialFrequency(frequency)
+
+
+class RdsDemodulator(ServiceDemodulator, DialFrequencyReceiver):
+    def __init__(self, sampleRate: int = 171000, rbds: bool = False):
+        self.sampleRate = sampleRate
+        self.parser = RdsParser()
+        workers = [
+            Convert(Format.FLOAT, Format.SHORT),
+            RedseaModule(sampleRate, rbds),
+            self.parser,
+        ]
+        # Connect all the workers
+        super().__init__(workers)
+
+    def getFixedAudioRate(self) -> int:
+        return self.sampleRate
+
+    def supportsSquelch(self) -> bool:
+        return False
+
+    def setDialFrequency(self, frequency: int) -> None:
+        self.parser.setDialFrequency(frequency)
+
+
+class NoaaAptDemodulator(ServiceDemodulator):
+    def __init__(self, satellite: int = 19, service: bool = False):
+        d = datetime.utcnow()
+        self.outFolder  = "/tmp/satdump/NOAA{0}-{1}".format(satellite, d.strftime('%y%m%d-%H%M%S'))
+        self.sampleRate = 50000
+        workers = [
+            SatDumpModule(mode = "noaa_apt",
+                sampleRate = self.sampleRate,
+                outFolder  = self.outFolder,
+                options    = {
+                    "satellite_number" : satellite,
+                    "start_timestamp"  : int(d.timestamp())
+                }
+            )
+        ]
+        # Connect all the workers
+        super().__init__(workers)
+
+    def getFixedAudioRate(self) -> int:
+        return self.sampleRate
+
+    def supportsSquelch(self) -> bool:
+        return False
+
+
+class MeteorLrptDemodulator(ServiceDemodulator):
+    def __init__(self, service: bool = False):
+        d = datetime.utcnow()
+        self.outFolder  = "/tmp/satdump/METEOR-{0}".format(d.strftime('%y%m%d-%H%M%S'))
+        self.sampleRate = 150000
+        workers = [
+            SatDumpModule(mode = "meteor_m2-x_lrpt",
+                sampleRate = self.sampleRate,
+                outFolder  = self.outFolder,
+                options    = { "start_timestamp" : int(d.timestamp()) }
+            )
+        ]
+        # Connect all the workers
+        super().__init__(workers)
+
+    def getFixedAudioRate(self) -> int:
+        return self.sampleRate
+
+    def supportsSquelch(self) -> bool:
+        return False

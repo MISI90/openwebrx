@@ -6,6 +6,8 @@ function Utils() {}
 
 Utils.callsign_url = null;
 Utils.vessel_url = null;
+Utils.flight_url = null;
+Utils.icao_url = null;
 
 // Set URL for linkifying callsigns
 Utils.setCallsignUrl = function(url) {
@@ -17,10 +19,33 @@ Utils.setVesselUrl = function(url) {
     this.vessel_url = url;
 };
 
-// Escape HTML code.
+// Set URL for linkifying flight and aircraft IDs
+Utils.setFlightUrl = function(url) {
+    this.flight_url = url;
+};
+
+// Set URL for linkifying ICAO aircraft IDs
+Utils.setIcaoUrl = function(url) {
+    this.icao_url = url;
+};
+
+// Escape HTML code
 Utils.htmlEscape = function(input) {
     return $('<div/>').text(input).html()
 };
+
+// Print frequency (in Hz) in a nice way
+Utils.printFreq = function(freq) {
+    if (isNaN(parseInt(freq))) {
+        return freq;
+    } else if (freq >= 30000000) {
+        return '' + (freq / 1000000.0) + 'MHz';
+    } else if (freq >= 10000) {
+        return '' + (freq / 1000.0) + 'kHz';
+    } else {
+        return '' + freq + 'Hz';
+    }
+}
 
 // Change frequency as required by given modulation
 Utils.offsetFreq = function(freq, mod) {
@@ -34,6 +59,7 @@ Utils.offsetFreq = function(freq, mod) {
         case 'rtty170':
         case 'rtty85':
         case 'sitorb':
+        case 'dsc':
         case 'bpsk31':
         case 'bpsk63':
             return freq - 1000;
@@ -73,19 +99,20 @@ Utils.linkifyVessel = function(mmsi) {
     return this.linkify(mmsi, this.vessel_url, mmsi, this.mmsi2country(mmsi));
 };
 
+// Create link to a flight or an aircraft
+Utils.linkifyFlight = function(flight, content = null) {
+    return this.linkify(flight, this.flight_url, content);
+};
+
+// Create link to a MODE-S ICAO ID
+Utils.linkifyIcao = function(icao, content = null) {
+    return this.linkify(icao, this.icao_url, content);
+};
+
 // Create link to tune OWRX to the given frequency and modulation.
 Utils.linkifyFreq = function(freq, mod) {
-    var text;
-    if (freq >= 30000000) {
-        text = '' + (freq / 1000000.0) + 'MHz';
-    } else if (freq >= 10000) {
-        text = '' + (freq / 1000.0) + 'kHz';
-    } else {
-        text = '' + freq + 'Hz';
-    }
-
     return '<a target="openwebrx-rx" href="/#freq='
-        + freq + ',mod=' + mod + '">' + text + '</a>';
+        + freq + ',mod=' + mod + '">' + Utils.printFreq(freq) + '</a>';
 };
 
 // Linkify given content so that clicking them opens the map with
@@ -100,6 +127,12 @@ Utils.linkToMap = function(id, content = null, attrs = "") {
     } else {
         return '';
     }
+};
+
+// Print time in hours, minutes, and seconds.
+Utils.HHMMSS = function(t) {
+    var pad = function (i) { return ('' + i).padStart(2, "0") };
+    return pad(t.getUTCHours()) + pad(t.getUTCMinutes()) + pad(t.getUTCSeconds());
 };
 
 // Compute distance, in kilometers, between two latlons.
@@ -169,6 +202,11 @@ Utils.call2country = function(callsign) {
 Utils.mmsi2country = function(mmsi) {
     var mid = mmsi.substring(0, 3);
     return mid in this.MID2COUNTRY? this.MID2COUNTRY[mid] : '';
+};
+
+// Check if a MID corresponds to a ground station.
+Utils.mmsiIsGround = function(mmsi) {
+    return mmsi.substring(0, 2) === '00';
 };
 
 //
@@ -982,6 +1020,12 @@ Utils.CALL2COUNTRY = {
 //
 
 Utils.MID2COUNTRY = {
+  "002" : "Europe Coast Station",
+  "003" : "North America Coast Station",
+  "004" : "Asia Coast Station",
+  "005" : "Oceania Coast Station",
+  "006" : "Africa Coast Station",
+  "007" : "South America Coast Station",
   "501" : "Adelie Land (France)",
   "401" : "Afghanistan",
   "303" : "Alaska (USA)",
