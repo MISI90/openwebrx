@@ -24,9 +24,9 @@ if [[ -z ${1:-} ]]; then
   apt-get update
   apt-get -y install --no-install-recommends $STATIC_PACKAGES $BUILD_PACKAGES
 
-  git clone https://github.com/osmocom/rtl-sdr.git
-  # release 2.0.1 from master as of 2024-02-04
-  cmakebuild rtl-sdr 420086af84d7eaaf98ff948cd11fea2cae71734a
+  git clone https://github.com/rtlsdrblog/rtl-sdr-blog
+  # release 1.3.4 from master from rtl-sdr-blog fork as of 2024-02-04
+  cmakebuild rtl-sdr-blog V1.3.4
 
   git clone https://github.com/merbanan/rtl_433.git
   cd rtl_433
